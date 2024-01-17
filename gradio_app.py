@@ -25,6 +25,7 @@ class GradioApp:
         for index, row in best_matches.iterrows():
             assistant_context += row['content'] + "\n"
         gpt_context = [{"role": "user", "content": assistant_context}]
+        print(assistant_context)
         for human, assistant in chat_history:
             gpt_context.append({"role": "user", "content": human}) 
             gpt_context.append({"role": "assistant", "content": assistant})  

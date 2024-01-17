@@ -4,7 +4,7 @@ from chromadb.config import Settings
 import pandas as pd
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import numpy as np
-import time
+import tiktoken
 
 class Transcript:
     chroma_client = chromadb.EphemeralClient(settings=Settings(allow_reset=True)) # shared chroma DB client
@@ -77,24 +77,45 @@ class Transcript:
             minutes, seconds = divmod(remainder, 60)
             seg['start'] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
         return transcript
-
+    
+    # OpenAI embedding batch requests require input to be < 8k tokens. 
+    # this allows querying video transcripts with > 8k tokens of text
+    def split_batches(self, text_transcript):
+        max_tokens = 8000
+        encoding = tiktoken.get_encoding("cl100k_base")
+        tokens = encoding.encode(text_transcript)
+        # Split tokens into chunks of max_tokens
+        token_blocks = [tokens[i: i+max_tokens] for i in range(0,len(tokens), max_tokens)]
+        text_blocks = [encoding.decode(block) for block in token_blocks]
+        return text_blocks
+    
     def embed_transcript(self,text_transcript):
         self.chroma_client.reset()
         embedding_model = "text-embedding-ada-002" 
         # dictionary containing text and embedded vector for each piece of text
         df = {'text': [], 'text_vector': []}
-        # loop through lines and add values
-        for line in text_transcript.rstrip("\n").split("\n"): 
-            df['text'].append(line)
+        batches = []
+        # split text into blocks containing < 8k tokens
+        text_blocks = self.split_batches(text_transcript)
+        # breakup each block of text into smaller snippets
+        for text in text_blocks:
+            df['text'] += [line for line in text.rstrip("\n").split("\n")]
+            batches.append([line for line in text.rstrip("\n").split("\n")])
         # batch embedding request to openAI to put into vector DB
-        embeddings = self.openAI_client.embeddings.create(
-                input = df['text'], model=embedding_model)
-        for embed in embeddings.data:
-            df['text_vector'].append(embed.embedding)
+        for batch in batches:
+            embeddings = self.openAI_client.embeddings.create(
+                input = batch, model=embedding_model)
+            for embed in embeddings.data:
+                df['text_vector'].append(embed.embedding)
+
         # create the to be used embedding function that will be used to query the chroma DB
         embedding_function = OpenAIEmbeddingFunction(api_key=self.api_key, model_name=embedding_model)
         # create the chroma collection that will store the embedded transcript
-        transcript_collection = self.chroma_client.create_collection(name='transcript_content', embedding_function=embedding_function)
+        transcript_collection = self.chroma_client.create_collection(
+            name='transcript_content',
+            embedding_function=embedding_function,
+            metadata={"hnsw:space": "cosine"} # using cosine similarity
+        )
         # convert dictionary to dataframe
         df = pd.DataFrame(data=df)
         df['id'] = np.arange(df.shape[0]) # add id's col, 0 through n for df with n rows
@@ -121,5 +142,6 @@ class Transcript:
                     })
         
         # return the 3 matches with the highest similarity score
-        return df.tail(3)
+        print(df)
+        return df.tail(15)
         
