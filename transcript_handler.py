@@ -1,10 +1,13 @@
 from youtube_transcript_api import YouTubeTranscriptApi
 import chromadb
+from chromadb.config import Settings
 import pandas as pd
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import numpy as np
+import time
 
 class Transcript:
+    chroma_client = chromadb.EphemeralClient(settings=Settings(allow_reset=True)) # shared chroma DB client
 
     def __init__(self,video_url,openAI_client,openAI_key):
         self.video_url = video_url
@@ -24,6 +27,8 @@ class Transcript:
                 video_id = self.video_url.split('watch?v=')[-1]
             # Fetch the transcript
             transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            # Change transcript time to minutes and seconds
+            transcript = self.convert_time(transcript)
             # Separate the transcript into bigger chunks
             transcript = self.join_data(transcript)
             for text in transcript:
@@ -64,24 +69,34 @@ class Transcript:
 
         return joined_data
     
+    # function to convert seconds to HH:MM:SS format
+    def convert_time(self,transcript):
+        for seg in transcript:
+            total_seconds = seg['start']
+            hours, remainder = divmod(int(total_seconds), 3600)
+            minutes, seconds = divmod(remainder, 60)
+            seg['start'] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        return transcript
 
     def embed_transcript(self,text_transcript):
+        self.chroma_client.reset()
         embedding_model = "text-embedding-ada-002" 
-        chroma_client = chromadb.EphemeralClient() # chroma DB client
         # dictionary containing text and embedded vector for each piece of text
         df = {'text': [], 'text_vector': []}
         # loop through lines and add values
-        for line in text_transcript.split("\n"): 
+        for line in text_transcript.rstrip("\n").split("\n"): 
             df['text'].append(line)
-            df['text_vector'].append(self.openAI_client.embeddings.create(
-                input = line, model=embedding_model).data[0].embedding)
+        # batch embedding request to openAI to put into vector DB
+        embeddings = self.openAI_client.embeddings.create(
+                input = df['text'], model=embedding_model)
+        for embed in embeddings.data:
+            df['text_vector'].append(embed.embedding)
         # create the to be used embedding function that will be used to query the chroma DB
         embedding_function = OpenAIEmbeddingFunction(api_key=self.api_key, model_name=embedding_model)
         # create the chroma collection that will store the embedded transcript
-        transcript_collection = chroma_client.create_collection(name='transcript_content', embedding_function=embedding_function)
+        transcript_collection = self.chroma_client.create_collection(name='transcript_content', embedding_function=embedding_function)
         # convert dictionary to dataframe
         df = pd.DataFrame(data=df)
-        df.drop(len(df)-1, inplace=True)
         df['id'] = np.arange(df.shape[0]) # add id's col, 0 through n for df with n rows
         # set id to be a string
         df['id'] = df['id'].apply(str)
@@ -92,7 +107,6 @@ class Transcript:
         )
         # convert dictionary to dataframe
         df = pd.DataFrame(data=df)
-
         self.chroma_collection = transcript_collection
         # return dataframe with ids, text, and vectors
         return df
