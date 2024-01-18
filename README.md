@@ -12,7 +12,7 @@ This script uses OpenAI's API and ChromaDB to provide a way to interact with You
 - Contextual Querying: Implements Retrieval-Augmented Generation (RAG) using ChromaDB to find the most relevant transcript snippet in response to user queries.
 - Gradio App Interface: Offers an easy-to-use Gradio interface, making the tool accessible for non-technical users and hosting it on Hugging Face Spaces.
 
-## To use this tool with your custom OpenAI API key, follow these simple steps:
+## To use this tool with your own OpenAI API key, follow this:
 
 **Clone the Repository**
 
@@ -30,8 +30,9 @@ This script uses OpenAI's API and ChromaDB to provide a way to interact with You
   `openAI_key = os.getenv('OPENAI_KEY')`  
   **After:**
   `openAI_key = 'your_openai_api_key_here'`
+  
+Important: Ensure that your OpenAI API key is kept secure and not exposed publicly.
 
-**Important Note:**
-Ensure that your OpenAI API key is kept secure and not exposed publicly.
+**Run app.py**  
 
 **You can test the app with whatever API credits I have left [here](https://huggingface.co/spaces/landonbd/YTchat).**
