@@ -5,6 +5,7 @@ import pandas as pd
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import numpy as np
 import tiktoken
+import re
 
 class Transcript:
     chroma_client = chromadb.EphemeralClient(settings=Settings(allow_reset=True)) # shared chroma DB client
@@ -18,13 +19,8 @@ class Transcript:
 
     def get_transcript(self):
         try:
-            # check if URL is for a youtube short
-            if self.video_url.find("shorts") != -1:
-                # Extract the video ID from the URL
-                video_id = self.video_url.split("shorts/")[-1]
-            else:
-                # Extraction for normal video URL
-                video_id = self.video_url.split('watch?v=')[-1]
+            # Extract the video ID from the URL using regex
+            video_id = re.search("[A-Za-z_\-0-9]{11}",self.video_url).group()
             # Fetch the transcript
             transcript = YouTubeTranscriptApi.get_transcript(video_id)
             # Change transcript time to minutes and seconds
