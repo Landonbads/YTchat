@@ -31,7 +31,7 @@ class GradioApp:
             gpt_context.append({"role": "assistant", "content": assistant})  
         gpt_context.append({"role": "user", "content": message})
         # Get response from OpenAI
-        response = self.client.chat.completions.create(model="gpt-3.5-turbo",
+        response = self.client.chat.completions.create(model="gpt-5-mini-2025-08-07",
                                                 messages=gpt_context)
         chat_history.append((message, response.choices[0].message.content))
         return "", chat_history
