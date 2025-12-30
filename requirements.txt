@@ -35,12 +35,12 @@ h11
 httpcore
 httptools
 httpx
-huggingface-hub
+huggingface-hub==0.34.3
 humanfriendly
 idna
 importlib-metadata
 importlib-resources
-Jinja2
+Jinja2==3.1.6
 jsonschema
 jsonschema-specifications
 kiwisolver
@@ -76,7 +76,7 @@ protobuf
 pulsar-client
 pyasn1
 pyasn1-modules
-pydantic
+pydantic==2.10.6
 pydantic_core
 pydub
 Pygments
