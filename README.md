@@ -4,6 +4,8 @@
 
 This script uses OpenAI's API and ChromaDB to provide a way to interact with YouTube videos. It enables users to obtain concise summaries of YouTube videos or ask specific questions about the video content. The core functionality revolves around extracting video transcripts, embedding them for efficient querying, and leveraging openAI's API for generating summaries and answering questions.
 
+**You can test the app with whatever API credits I have left [here](https://ytchat.us).**
+
 ## Features
 
 - Transcript Extraction: Retrieves transcripts of YouTube videos, including standard videos and YouTube Shorts using regex.
@@ -21,7 +23,7 @@ This script uses OpenAI's API and ChromaDB to provide a way to interact with You
 **Install Dependencies**
 
 - cd [repository directory]
-- pip install -r requirements.txt
+- pip3 install -r requirements.txt
 
 **Configure API Key:**
 
@@ -33,6 +35,4 @@ This script uses OpenAI's API and ChromaDB to provide a way to interact with You
   
 Important: Ensure that your OpenAI API key is kept secure and not exposed publicly.
 
-**Run app.py**  
-
-**You can test the app with whatever API credits I have left [here](https://huggingface.co/spaces/landonbd/YTchat).**
+**python3 app.py**  
