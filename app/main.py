@@ -1,28 +1,14 @@
-"""FastAPI entry point. Serves the static UI and a health check.
-
-Routes are split into app/routes.py once there's more than the page itself
-to serve — for now it's small enough to live inline.
-"""
-from pathlib import Path
-
+"""FastAPI entry point — wiring only. Every HTTP handler lives in app/routes.py."""
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+from app import routes
 
 app = FastAPI(title="YTchat")
+app.include_router(routes.root_router)
+app.include_router(routes.api_router)
 
-# Serve CSS/JS from /static/*; the HTML page is served separately at / so we
-# can return it without exposing a directory listing.
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-
-@app.get("/")
-def index() -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
-
-
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+# CSS/JS live under /static/*; the HTML page itself is served by
+# routes.root_router so we return a specific file rather than exposing a
+# directory listing.
+app.mount("/static", StaticFiles(directory=routes.STATIC_DIR), name="static")
