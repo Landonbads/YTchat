@@ -24,6 +24,10 @@ section {
   border-radius: 6px;
 }
 
+.player-section { padding: 0; overflow: hidden; }
+.player-wrap { width: 100%; aspect-ratio: 16 / 9; }
+.player-wrap iframe, #player { width: 100%; height: 100%; border: 0; display: block; }
+
 input[type="text"] {
   width: 100%;
   padding: 0.5rem;
@@ -65,6 +69,13 @@ button:disabled {
   border-bottom: 1px solid #eee;
 }
 .msg:last-child { border-bottom: none; }
+
+a.ts {
+  color: #1a73e8;
+  text-decoration: underline;
+  cursor: pointer;
+}
+a.ts:hover { color: #0a54c8; }
 
 #chat-form {
   display: flex;
