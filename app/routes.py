@@ -80,3 +80,21 @@ def chat(req: ChatRequest) -> ChatResponse:
 
     reply = llm.chat(chunks, req.messages)
     return ChatResponse(content=reply)
+
+
+class SummaryRequest(BaseModel):
+    video_id: str
+
+
+class SummaryResponse(BaseModel):
+    content: str
+
+
+@api_router.post("/summary", response_model=SummaryResponse)
+def summary(req: SummaryRequest) -> SummaryResponse:
+    try:
+        chunks = get_transcript(req.video_id)
+    except TranscriptUnavailable as e:
+        raise HTTPException(status_code=422, detail=f"Transcript unavailable: {e}")
+
+    return SummaryResponse(content=llm.summarize(chunks))

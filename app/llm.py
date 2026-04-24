@@ -13,17 +13,28 @@ from app.timestamps import seconds_to_hhmmss
 from app.transcripts import Chunk
 
 MODEL = "claude-opus-4-7"
-MAX_TOKENS = 2048
+MAX_CHAT_TOKENS = 2048
+MAX_SUMMARY_TOKENS = 8192
 
 _client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
-_SYSTEM_INSTRUCTIONS = (
+_CHAT_INSTRUCTIONS = (
     "You are a helpful assistant that answers questions about a YouTube "
     "video. The full transcript is provided below this instruction, with "
     "each segment labeled by its timestamp. When referencing specific "
     "moments in the video, cite them in [HH:MM:SS] or [MM:SS] format — "
     "the UI turns those into clickable links that seek the player. Be "
     "concise and direct; do not summarize the whole video unless asked."
+)
+
+_SUMMARY_INSTRUCTIONS = (
+    "You are summarizing a YouTube video. The full transcript is provided "
+    "below this instruction, with each segment labeled by its timestamp. "
+    "Produce a clear summary covering the main points, structure, and "
+    "notable moments. Cite [HH:MM:SS] or [MM:SS] timestamps for key "
+    "moments so the reader can jump to them in the embedded player. Use "
+    "short paragraphs and bullet points where helpful. Be information-"
+    "dense; no filler."
 )
 
 
@@ -38,9 +49,9 @@ def chat(chunks: list[Chunk], messages: list[Message]) -> str:
 
     response = _client.messages.create(
         model=MODEL,
-        max_tokens=MAX_TOKENS,
+        max_tokens=MAX_CHAT_TOKENS,
         system=[
-            {"type": "text", "text": _SYSTEM_INSTRUCTIONS},
+            {"type": "text", "text": _CHAT_INSTRUCTIONS},
             # cache_control on the largest stable block — the transcript.
             # Same video + any user turns → same cached prefix → cheap follow-ups.
             {
@@ -50,6 +61,27 @@ def chat(chunks: list[Chunk], messages: list[Message]) -> str:
             },
         ],
         messages=[m.model_dump() for m in messages],
+    )
+
+    return response.content[0].text
+
+
+def summarize(chunks: list[Chunk]) -> str:
+    """One-shot summary of the video. Summary and chat use separate caches."""
+    transcript = _format_transcript(chunks)
+
+    response = _client.messages.create(
+        model=MODEL,
+        max_tokens=MAX_SUMMARY_TOKENS,
+        system=[
+            {"type": "text", "text": _SUMMARY_INSTRUCTIONS},
+            {
+                "type": "text",
+                "text": f"Transcript:\n{transcript}",
+                "cache_control": {"type": "ephemeral"},
+            },
+        ],
+        messages=[{"role": "user", "content": "Summarize this video."}],
     )
 
     return response.content[0].text
