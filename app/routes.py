@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from app import llm
 from app.transcripts import (
     Chunk,
     TranscriptUnavailable,
@@ -57,3 +58,25 @@ def load(req: LoadRequest) -> LoadResponse:
         raise HTTPException(status_code=422, detail=f"Transcript unavailable: {e}")
 
     return LoadResponse(video_id=video_id, chunks=chunks)
+
+
+class ChatRequest(BaseModel):
+    video_id: str
+    messages: list[llm.Message]
+
+
+class ChatResponse(BaseModel):
+    content: str
+
+
+@api_router.post("/chat", response_model=ChatResponse)
+def chat(req: ChatRequest) -> ChatResponse:
+    # Transcript is re-fetched on every chat turn for now; the SQLite cache
+    # in commit #10 will make this free after the first load.
+    try:
+        chunks = get_transcript(req.video_id)
+    except TranscriptUnavailable as e:
+        raise HTTPException(status_code=422, detail=f"Transcript unavailable: {e}")
+
+    reply = llm.chat(chunks, req.messages)
+    return ChatResponse(content=reply)
