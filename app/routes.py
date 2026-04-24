@@ -11,12 +11,13 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from app import llm
+from app import cache, llm
 from app.transcripts import (
     Chunk,
     TranscriptUnavailable,
     extract_video_id,
     get_transcript,
+    transcribe_audio,
 )
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
@@ -37,6 +38,9 @@ def health() -> dict[str, str]:
 
 class LoadRequest(BaseModel):
     url: str
+    # Whisper runs tens of seconds per video, so the frontend opts in on a
+    # second call after showing the user a "generating transcript…" status.
+    allow_whisper: bool = False
 
 
 class LoadResponse(BaseModel):
@@ -51,13 +55,36 @@ def load(req: LoadRequest) -> LoadResponse:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    cached = cache.get(video_id)
+    if cached is not None:
+        return LoadResponse(video_id=video_id, chunks=cached)
+
     try:
         chunks = get_transcript(video_id)
+        source = "captions"
     except TranscriptUnavailable as e:
-        # Commit #9 will catch this and transcribe via Whisper instead.
-        raise HTTPException(status_code=422, detail=f"Transcript unavailable: {e}")
+        if not req.allow_whisper:
+            # Frontend sees 422, shows a "Generating with Whisper…" status,
+            # and retries with allow_whisper=true.
+            raise HTTPException(
+                status_code=422,
+                detail=f"Captions unavailable ({e}); retry with allow_whisper=true",
+            )
+        try:
+            chunks = transcribe_audio(video_id)
+            source = "whisper"
+        except TranscriptUnavailable as we:
+            raise HTTPException(status_code=422, detail=f"Whisper failed: {we}")
 
+    cache.put(video_id, chunks, source=source)
     return LoadResponse(video_id=video_id, chunks=chunks)
+
+
+def _require_cached(video_id: str) -> list[Chunk]:
+    chunks = cache.get(video_id)
+    if chunks is None:
+        raise HTTPException(status_code=400, detail="Video not loaded; POST /api/load first")
+    return chunks
 
 
 class ChatRequest(BaseModel):
@@ -71,15 +98,8 @@ class ChatResponse(BaseModel):
 
 @api_router.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:
-    # Transcript is re-fetched on every chat turn for now; the SQLite cache
-    # in commit #10 will make this free after the first load.
-    try:
-        chunks = get_transcript(req.video_id)
-    except TranscriptUnavailable as e:
-        raise HTTPException(status_code=422, detail=f"Transcript unavailable: {e}")
-
-    reply = llm.chat(chunks, req.messages)
-    return ChatResponse(content=reply)
+    chunks = _require_cached(req.video_id)
+    return ChatResponse(content=llm.chat(chunks, req.messages))
 
 
 class SummaryRequest(BaseModel):
@@ -92,9 +112,5 @@ class SummaryResponse(BaseModel):
 
 @api_router.post("/summary", response_model=SummaryResponse)
 def summary(req: SummaryRequest) -> SummaryResponse:
-    try:
-        chunks = get_transcript(req.video_id)
-    except TranscriptUnavailable as e:
-        raise HTTPException(status_code=422, detail=f"Transcript unavailable: {e}")
-
+    chunks = _require_cached(req.video_id)
     return SummaryResponse(content=llm.summarize(chunks))

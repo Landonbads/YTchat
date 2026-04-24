@@ -1,6 +1,8 @@
 fastapi
 uvicorn[standard]
 anthropic
+openai
 youtube-transcript-api
+yt-dlp
 python-dotenv
 pydantic

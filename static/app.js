@@ -42,8 +42,17 @@ async function postJSON(path, body) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || res.statusText);
+  // Read as text first so we can surface non-JSON server errors (FastAPI
+  // returns "Internal Server Error" as plain text on unhandled 500s).
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { /* leave null */ }
+  if (!res.ok) {
+    const detail = (data && data.detail) || text || res.statusText;
+    const err = new Error(`${res.status} ${detail}`);
+    err.status = res.status;
+    throw err;
+  }
   return data;
 }
 
@@ -52,11 +61,22 @@ async function load() {
   if (!url) return;
 
   inFlight = true;
-  el.status.textContent = "Loading…";
+  el.status.textContent = "Loading transcript…";
   setControls();
 
   try {
-    const data = await postJSON("/api/load", { url });
+    // Two-stage flow so the user sees a distinct status when we fall back
+    // to Whisper (which can take tens of seconds). The server also caches
+    // results, so a second viewer of the same video hits the first call
+    // instantly regardless of which path produced the chunks.
+    let data;
+    try {
+      data = await postJSON("/api/load", { url, allow_whisper: false });
+    } catch (e) {
+      if (e.status !== 422) throw e;
+      el.status.textContent = "Generating transcript with Whisper… (this may take a minute)";
+      data = await postJSON("/api/load", { url, allow_whisper: true });
+    }
     videoId = data.video_id;
     messages = [];
     el.messages.innerHTML = "";
