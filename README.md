@@ -48,6 +48,28 @@ docker run -p 8000:8000 --env-file .env -v ytchat-cache:/data ytchat
 
 The volume persists the SQLite transcript cache across restarts.
 
+## Deploy on AWS EC2
+
+The production image runs on a single EC2 instance — the same host
+serving ytchat.us. Build, then run with `--restart unless-stopped` so the
+container comes back automatically after a reboot or crash:
+
+```bash
+docker build -t ytchat .
+docker run -d \
+  --name ytchat \
+  --restart unless-stopped \
+  -p 80:8000 \
+  --env-file .env \
+  -v ytchat-cache:/data \
+  ytchat
+```
+
+The `HEALTHCHECK` in the Dockerfile makes `docker ps` report
+`healthy`/`unhealthy` based on whether `/health` is actually responding,
+which is useful both for manual debugging and for any orchestrator (ECS,
+Nomad) you might adopt later without changing the image.
+
 ## Environment
 
 | Var                 | Required            | Purpose                          |

@@ -87,6 +87,14 @@ def _require_cached(video_id: str) -> list[Chunk]:
     return chunks
 
 
+# Chat history is held client-side: the browser keeps the conversation in
+# memory and sends the full messages array on every /api/chat call. The
+# server stays stateless, which makes multi-user safety automatic — two
+# browsers can never see each other's chat. The cap below just prevents a
+# single client from blasting an unbounded history at Claude.
+MAX_HISTORY_MESSAGES = 50
+
+
 class ChatRequest(BaseModel):
     video_id: str
     messages: list[llm.Message]
@@ -98,6 +106,11 @@ class ChatResponse(BaseModel):
 
 @api_router.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:
+    if len(req.messages) > MAX_HISTORY_MESSAGES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Chat history too long ({len(req.messages)} > {MAX_HISTORY_MESSAGES})",
+        )
     chunks = _require_cached(req.video_id)
     return ChatResponse(content=llm.chat(chunks, req.messages))
 
