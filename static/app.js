@@ -17,6 +17,7 @@ const ytReady = new Promise((resolve) => {
 const $ = (id) => document.getElementById(id);
 const el = {
   url: $("url"),
+  loadForm: $("load-form"),
   loadBtn: $("load-btn"),
   status: $("status"),
   playerSection: $("player-section"),
@@ -166,9 +167,10 @@ function renderWithTimestamps(text) {
 function renderMessage(role, content) {
   const div = document.createElement("div");
   div.className = `msg msg-${role}`;
-  const label = document.createElement("strong");
-  label.textContent = role === "user" ? "You: " : "YTchat: ";
-  div.appendChild(label);
+  const chip = document.createElement("span");
+  chip.className = "role";
+  chip.textContent = role === "user" ? "You" : "YTchat";
+  div.appendChild(chip);
   div.appendChild(renderWithTimestamps(content));
   el.messages.appendChild(div);
   div.scrollIntoView({ block: "end" });
@@ -198,8 +200,7 @@ async function sendChat(text) {
   }
 }
 
-el.loadBtn.addEventListener("click", load);
-el.url.addEventListener("keydown", (e) => { if (e.key === "Enter") load(); });
+el.loadForm.addEventListener("submit", (e) => { e.preventDefault(); load(); });
 el.summaryBtn.addEventListener("click", summarize);
 el.chatForm.addEventListener("submit", (e) => {
   e.preventDefault();

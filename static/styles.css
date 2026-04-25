@@ -1,86 +1,216 @@
+:root {
+  --bg: #0d0d0f;
+  --card: #18181b;
+  --border: #27272a;
+  --border-strong: #3f3f46;
+  --text: #fafafa;
+  --text-muted: #a1a1aa;
+  --accent: #ef4444;
+  --accent-hover: #dc2626;
+  --accent-soft: rgba(239, 68, 68, 0.15);
+  --link: #60a5fa;
+  --link-soft: rgba(96, 165, 250, 0.15);
+}
+
 * { box-sizing: border-box; }
 
-body {
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  color: #222;
-  background: #fafafa;
+html, body {
   margin: 0;
-  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  min-height: 100vh;
 }
 
-main {
-  max-width: 720px;
-  margin: 2rem auto;
-  padding: 0 1rem;
+/* --- Header ----------------------------------------------------------- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
 }
 
-h1 { margin: 0 0 1.5rem; }
+.app-header h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
 
-section {
-  margin-bottom: 1.5rem;
+.url-row {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+}
+.url-row input { flex: 1; }
+
+#status {
+  margin: 0;
+  padding: 0.5rem 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  min-height: 1.4em;
+}
+
+/* --- Layout grid ------------------------------------------------------ */
+
+.app-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0 1.5rem 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .app-grid { grid-template-columns: 1fr; }
+}
+
+/* --- Cards ------------------------------------------------------------ */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   padding: 1rem;
-  background: #fff;
-  border: 1px solid #e5e5e5;
-  border-radius: 6px;
 }
 
-.player-section { padding: 0; overflow: hidden; }
+.section-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+/* --- Player ----------------------------------------------------------- */
+
+.player-card { padding: 0; overflow: hidden; }
 .player-wrap { width: 100%; aspect-ratio: 16 / 9; }
 .player-wrap iframe, #player { width: 100%; height: 100%; border: 0; display: block; }
 
+/* --- Inputs / buttons ------------------------------------------------- */
+
 input[type="text"] {
-  width: 100%;
-  padding: 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem 0.75rem;
   font: inherit;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.1s;
 }
+input[type="text"]::placeholder { color: var(--text-muted); }
+input[type="text"]:focus { border-color: var(--accent); }
+input[type="text"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
 button {
-  padding: 0.5rem 1rem;
-  font: inherit;
-  background: #111;
-  color: #fff;
+  background: var(--accent);
+  color: var(--text);
   border: none;
-  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 500;
   cursor: pointer;
-  margin-top: 0.5rem;
+  transition: background 0.1s, transform 0.05s;
 }
-
+button:hover:not(:disabled) { background: var(--accent-hover); }
+button:active:not(:disabled) { transform: translateY(1px); }
 button:disabled {
-  background: #bbb;
+  background: var(--border-strong);
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 
-#status {
-  margin: 0.75rem 0 0;
-  color: #666;
-  font-size: 0.9rem;
-  min-height: 1.2em;
-}
+/* --- Summary ---------------------------------------------------------- */
 
-#summary-out, #messages {
+#summary-out {
   white-space: pre-wrap;
   margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+#summary-out:empty { display: none; }
+
+/* --- Chat ------------------------------------------------------------- */
+
+.chat-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+  height: calc(100vh - 180px);
+}
+
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0 -0.25rem 0.75rem;
+  padding: 0 0.25rem;
 }
 
 .msg {
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #eee;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  white-space: pre-wrap;
+  font-size: 0.95rem;
 }
 .msg:last-child { border-bottom: none; }
 
-a.ts {
-  color: #1a73e8;
-  text-decoration: underline;
-  cursor: pointer;
+.msg .role {
+  display: inline-block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  margin-right: 0.5rem;
+  vertical-align: 2px;
 }
-a.ts:hover { color: #0a54c8; }
+.msg-user .role { background: var(--link-soft); color: var(--link); }
+.msg-assistant .role { background: var(--accent-soft); color: var(--accent); }
 
 #chat-form {
   display: flex;
   gap: 0.5rem;
-  margin-top: 0.75rem;
+  margin-top: auto;
 }
 #chat-form input { flex: 1; }
-#chat-form button { margin-top: 0; }
+
+/* --- Timestamp citations --------------------------------------------- */
+
+a.ts {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+a.ts:hover { background: rgba(239, 68, 68, 0.28); }
+
+/* --- Scrollbar (subtle, dark) ---------------------------------------- */
+
+#messages::-webkit-scrollbar { width: 8px; }
+#messages::-webkit-scrollbar-track { background: transparent; }
+#messages::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+#messages::-webkit-scrollbar-thumb:hover { background: #52525b; }

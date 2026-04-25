@@ -3,29 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
   <title>YTchat</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <main>
+  <header class="app-header">
     <h1>YTchat</h1>
-
-    <section>
+    <form id="load-form" class="url-row">
       <input id="url" type="text" placeholder="Paste a YouTube URL..." />
-      <button id="load-btn">Load</button>
-      <p id="status"></p>
-    </section>
+      <button id="load-btn" type="submit">Load</button>
+    </form>
+  </header>
 
-    <section id="player-section" class="player-section" hidden>
-      <div class="player-wrap"><div id="player"></div></div>
-    </section>
+  <p id="status"></p>
 
-    <section>
-      <button id="summary-btn" disabled>Summarize</button>
-      <div id="summary-out"></div>
-    </section>
+  <main class="app-grid">
+    <div class="left-col">
+      <section class="card player-card" id="player-section" hidden>
+        <div class="player-wrap"><div id="player"></div></div>
+      </section>
 
-    <section>
+      <section class="card">
+        <div class="section-label">Summary</div>
+        <button id="summary-btn" disabled>Summarize</button>
+        <div id="summary-out"></div>
+      </section>
+    </div>
+
+    <section class="card chat-card">
+      <div class="section-label">Chat</div>
       <div id="messages"></div>
       <form id="chat-form">
         <input id="chat-input" type="text" placeholder="Ask about the video..." disabled />
