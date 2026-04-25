@@ -22,8 +22,9 @@ from youtube_transcript_api import (
     TranscriptsDisabled,
     YouTubeTranscriptApi,
 )
+from youtube_transcript_api.proxies import GenericProxyConfig
 
-from app.config import OPENAI_API_KEY
+from app.config import OPENAI_API_KEY, PROXY_URL
 
 # Chunk size trades citation precision against label overhead: smaller
 # chunks mean clicking a [MM:SS] citation lands closer to the moment the
@@ -73,12 +74,19 @@ def extract_video_id(url_or_id: str) -> str:
 
 def get_transcript(video_id: str) -> list[Chunk]:
     """Fetch captions for a video and group them into ~15s chunks."""
+    api = YouTubeTranscriptApi(proxy_config=_proxy_config()) if PROXY_URL else YouTubeTranscriptApi()
     try:
-        snippets = YouTubeTranscriptApi().fetch(video_id=video_id)
+        snippets = api.fetch(video_id=video_id)
     except (NoTranscriptFound, TranscriptsDisabled) as e:
         raise TranscriptUnavailable(str(e)) from e
 
     return _join_snippets(snippets)
+
+
+def _proxy_config() -> GenericProxyConfig:
+    # Same URL for both schemes — Oxylabs and most residential proxies accept
+    # CONNECT for HTTPS over the same HTTP endpoint.
+    return GenericProxyConfig(http_url=PROXY_URL, https_url=PROXY_URL)
 
 
 def transcribe_audio(video_id: str) -> list[Chunk]:
@@ -124,6 +132,10 @@ def _download_audio(video_id: str, out_path: Path) -> None:
         "-o", str(out_path),
         f"https://www.youtube.com/watch?v={video_id}",
     ]
+    if PROXY_URL:
+        # Same proxy as the captions path; YouTube blocks AWS IPs hard
+        # otherwise.
+        cmd.extend(["--proxy", PROXY_URL])
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         raise TranscriptUnavailable(f"yt-dlp failed: {result.stderr[:200]}")
