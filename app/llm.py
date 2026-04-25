@@ -30,11 +30,10 @@ _CHAT_INSTRUCTIONS = (
 _SUMMARY_INSTRUCTIONS = (
     "You are summarizing a YouTube video. The full transcript is provided "
     "below this instruction, with each segment labeled by its timestamp. "
-    "Produce a clear summary covering the main points, structure, and "
-    "notable moments. Cite [HH:MM:SS] or [MM:SS] timestamps for key "
+    "Produce a clear summary covering a few key points."
+    "Cite [HH:MM:SS] or [MM:SS] timestamps for your chosen key "
     "moments so the reader can jump to them in the embedded player. Use "
-    "short paragraphs and bullet points where helpful. Be information-"
-    "dense; no filler."
+    "short paragraph(s) and prefer brevity over filler. "
 )
 
 
