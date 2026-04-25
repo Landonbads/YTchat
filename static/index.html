@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YTchat</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main>
+    <h1>YTchat</h1>
+
+    <section>
+      <input id="url" type="text" placeholder="Paste a YouTube URL..." />
+      <button id="load-btn">Load</button>
+      <p id="status"></p>
+    </section>
+
+    <section id="player-section" class="player-section" hidden>
+      <div class="player-wrap"><div id="player"></div></div>
+    </section>
+
+    <section>
+      <button id="summary-btn" disabled>Summarize</button>
+      <div id="summary-out"></div>
+    </section>
+
+    <section>
+      <div id="messages"></div>
+      <form id="chat-form">
+        <input id="chat-input" type="text" placeholder="Ask about the video..." disabled />
+        <button id="send-btn" disabled>Send</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

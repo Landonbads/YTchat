@@ -1,0 +1,31 @@
+# git
+.git
+.gitignore
+.gitattributes
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# secrets & local runtime data — never bake these into an image
+.env
+.env.example
+*.db
+*.db-journal
+data/
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# claude code worktrees
+.claude/
+
+# build artifacts irrelevant inside the image
+Dockerfile
+.dockerignore
+README.md
